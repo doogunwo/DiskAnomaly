@@ -1,0 +1,13 @@
+[global]
+ioengine=libaio
+direct=1
+size=2G
+bs=64k
+rw=rw
+rwmixread=80
+iodepth=64
+
+[read_intensive_test]
+filename=/mnt/sda
+
+

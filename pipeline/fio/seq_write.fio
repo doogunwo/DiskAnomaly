@@ -1,0 +1,11 @@
+[global]
+ioengine=libaio
+direct=1
+size=1G
+bs=128k
+rw=write
+iodepth=16
+
+[sequential_write_test]
+filename=/mnt/sda
+

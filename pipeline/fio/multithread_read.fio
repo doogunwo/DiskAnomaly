@@ -1,0 +1,13 @@
+[global]
+ioengine=libaio
+direct=1
+size=4G
+bs=1M
+rw=read
+iodepth=16
+numjobs=4
+
+[multithread_read_test]
+filename=/mnt/sda
+
+

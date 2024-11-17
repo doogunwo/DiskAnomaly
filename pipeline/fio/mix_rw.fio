@@ -1,0 +1,12 @@
+[global]
+ioengine=libaio
+direct=1
+size=1G
+bs=4k
+rw=randrw
+rwmixread=70
+iodepth=32
+
+[random_rw_mixed_test]
+filename=/mnt/sda
+

@@ -1,0 +1,12 @@
+[global]
+ioengine=libaio
+direct=1
+size=2G
+bs=64k
+rw=rw
+rwmixread=20
+iodepth=64
+
+[write_intensive_test]
+filename=/dev/sda6
+

@@ -1,0 +1,12 @@
+[global]
+ioengine=libaio
+direct=1
+size=10G
+bs=1M
+rw=read
+iodepth=128
+
+[high_throughput_test]
+filename=/mnt/sda
+
+

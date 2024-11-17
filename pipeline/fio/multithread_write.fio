@@ -1,0 +1,12 @@
+[global]
+ioengine=libaio
+direct=1
+size=4G
+bs=8k
+rw=randwrite
+iodepth=16
+numjobs=8
+
+[multithread_write_test]
+filename=/mnt/sda
+

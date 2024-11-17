@@ -1,0 +1,11 @@
+[global]
+ioengine=libaio
+direct=1
+size=500M
+bs=4k
+rw=randwrite
+iodepth=4
+
+[low_latency_test]
+filename=/mnt/sda
+

@@ -1,0 +1,13 @@
+[global]
+ioengine=libaio
+direct=1
+invalidate=1
+size=5G
+bs=128k
+rw=read
+iodepth=64
+
+[cache_disabled_test]
+filename=/mnt/sda
+
+

@@ -1,0 +1,11 @@
+[global]
+ioengine=libaio
+direct=1
+size=1G
+bs=4k
+rw=randwrite
+iodepth=32
+
+[random_write_test]
+filename=/mnt/sda
+
