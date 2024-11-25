@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disk I/O Monitoring</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Disk I/O Monitoring</h1>
+    <canvas id="readWriteChart" width="800" height="400"></canvas>
+    <canvas id="anomalyChart" width="800" height="400"></canvas>
+    <script>
+        const readWriteCtx = document.getElementById('readWriteChart').getContext('2d');
+        const anomalyCtx = document.getElementById('anomalyChart').getContext('2d');
+
+        const readWriteChart = new Chart(readWriteCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Reads', 'Writes'],
+                datasets: [{
+                    label: 'Count',
+                    data: [0, 0],
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)'],
+                    borderWidth: 1
+                }]
+            }
+        });
+
+        const anomalyChart = new Chart(anomalyCtx, {
+            type: 'line',
+            data: {
+                labels: [],  // Timestamps
+                datasets: [{
+                    label: 'Anomaly Score',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Time' } },
+                    y: { title: { display: true, text: 'Anomaly Score' }, min: 0, max: 1 }
+                }
+            }
+        });
+
+        const socket = io();
+        socket.on('update_data', (data) => {
+            // Update Read/Write Counts
+            readWriteChart.data.datasets[0].data[0] = data.read_count;
+            readWriteChart.data.datasets[0].data[1] = data.write_count;
+            readWriteChart.update();
+
+            // Update Anomaly Chart
+            anomalyChart.data.labels.push(new Date(data.timestamp * 1000).toLocaleTimeString());
+            anomalyChart.data.datasets[0].data.push(data.anomaly_score);
+
+            if (anomalyChart.data.labels.length > 20) {
+                anomalyChart.data.labels.shift();
+                anomalyChart.data.datasets[0].data.shift();
+            }
+            anomalyChart.update();
+        });
+    </script>
+</body>
+</html>
+
