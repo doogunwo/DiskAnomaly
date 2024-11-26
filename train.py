@@ -31,16 +31,15 @@ def find_optimal_lr(model, dataloader, criterion, device):
             optimizer.step()
             losses.append(loss.item())
             break  # Test one batch per learning rate
-
-    # Plot loss vs learning rate
+    
     plt.figure(figsize=(10, 6))
     plt.plot(learning_rates.numpy(), losses)
     plt.xscale("log")
     plt.xlabel("Learning Rate (log scale)")
     plt.ylabel("Loss")
     plt.title("Learning Rate Finder")
-    plt.show()
-
+    plt.savefig("optimal.png")
+   
     # Find the optimal learning rate (e.g., loss starts decreasing)
     min_loss_idx = losses.index(min(losses))
     optimal_lr = learning_rates[min_loss_idx].item()
@@ -55,7 +54,7 @@ if __name__ == "__main__":
     hidden_dim = 64
     latent_dim = 32
     seq_len = 10
-    batch_size = 128
+    batch_size = 32
     num_epochs = 1
 
     print("Data preprocessing")
@@ -63,13 +62,19 @@ if __name__ == "__main__":
     # 데이터 읽어 들이기.
     file_path = "./data/blktrace_data.csv"
     with tqdm(total=1, desc="Preprocessing Dataset") as pbar:
-        data, _, _ = preprocess_dataset(file_path, seq_len)
+        data= preprocess_dataset(file_path, seq_len)[0]
+        print(data)
         pbar.update(1)
     # 데이터로드 생성
     # Create DataLoader
+    data = preprocess_dataset(file_path,seq_len)[0]
+    print(f"Data type: {type(data)}")  # <class 'torch.Tensor'>
+    print(f"Data shape: {data.shape}")  #
     dataset = TensorDataset(data)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
+    dataloader = DataLoader(dataset, batch_size=batch_size)
+    for batch in dataloader:
+        print(batch[0].shape)
+        break
     # 모델 선언
     model = AADModel(input_dim, hidden_dim, latent_dim).to(device)
     criterion = nn.MSELoss()  # 로스함수
@@ -77,6 +82,7 @@ if __name__ == "__main__":
     # 최적의 학습률찾기
     print("Finding optimal learning rate...")
     optimal_lr = find_optimal_lr(model, dataloader, criterion, device)
+    # 개선된 코드: 학습률 vs 손실 그래프 추가
     print(f"Optimal Learning Rate: {optimal_lr}")
 
     # 옵티마이저
@@ -95,7 +101,7 @@ if __name__ == "__main__":
                 reconstructed, real_or_fake, z, mu, logvar = model(inputs, seq_len)
 
                 recon_loss = criterion(reconstructed, inputs)
-                kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+                kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / batch_size
                 loss = recon_loss + kl_loss
 
                 optimizer.zero_grad()
@@ -105,6 +111,7 @@ if __name__ == "__main__":
                 total_loss += loss.item()
                 batch_bar.set_postfix(Loss=loss.item())  
 
+            
         print(f"Epoch [{epoch+1}/{num_epochs}], Total Loss: {total_loss:.4f}")
 
     print("Saving the model...")

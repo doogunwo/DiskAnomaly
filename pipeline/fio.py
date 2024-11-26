@@ -1,7 +1,6 @@
 import subprocess
 import os
 import random
-import time
 
 def select_fio(folder: str) -> str:
     """

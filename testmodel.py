@@ -38,7 +38,6 @@ def preprocess(data, scaler):
     Returns:
         np.array: 전처리된 데이터 포인트.
     """
-    print("전처리")
     io_type_map = {"A": 0, "Q": 1, "G": 2, "I": 3, "D": 4, "C": 5 , "M": 6}
     io_type = io_type_map.get(data["IO_Type"], -1)
     if io_type == -1:
@@ -79,15 +78,12 @@ def process_stream(device_path, buffer, seq_len, model, scaler):
     stop_event = threading.Event()  # 중단 이벤트 생성
     for raw_data in pipe(device_path, stop_event):
         # 데이터 전처리
-        print("raw_data in pipe")
         preprocessed_data = preprocess(raw_data, scaler)
-        print("preprocess")
         if preprocessed_data is None:
             print("Invalid data. Skipping...")
             continue
 
         # 버퍼에 데이터 추가
-        print("add buffer")
         buffer.append(preprocessed_data)
 
         if len(buffer) > seq_len:

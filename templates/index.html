@@ -3,70 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disk I/O Monitoring</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.min.js"></script>
+    <title>Disk I/O and Anomaly Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Disk I/O Monitoring</h1>
-    <canvas id="readWriteChart" width="800" height="400"></canvas>
-    <canvas id="anomalyChart" width="800" height="400"></canvas>
+    <h1>Disk I/O and Anomaly Monitoring</h1>
+    <div>
+        <canvas id="ioChart"></canvas>
+        <canvas id="anomalyChart" style="margin-top: 50px;"></canvas>
+    </div>
     <script>
-        const readWriteCtx = document.getElementById('readWriteChart').getContext('2d');
-        const anomalyCtx = document.getElementById('anomalyChart').getContext('2d');
+        const updateInterval = 1000; // 1초마다 업데이트
 
-        const readWriteChart = new Chart(readWriteCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Reads', 'Writes'],
-                datasets: [{
-                    label: 'Count',
-                    data: [0, 0],
-                    backgroundColor: ['rgba(54, 162, 235, 0.2)', 'rgba(255, 99, 132, 0.2)'],
-                    borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)'],
-                    borderWidth: 1
-                }]
-            }
-        });
-
-        const anomalyChart = new Chart(anomalyCtx, {
+        const ioChart = new Chart(document.getElementById('readWriteChart'), {
             type: 'line',
             data: {
-                labels: [],  // Timestamps
-                datasets: [{
-                    label: 'Anomaly Score',
-                    data: [],
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 2,
-                    fill: false
-                }]
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Read I/O (MB)',
+                        data: [],
+                        borderColor: 'blue',
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Write I/O (MB)',
+                        data: [],
+                        borderColor: 'green',
+                        tension: 0.1
+                    }
+                ]
             },
             options: {
-                scales: {
-                    x: { title: { display: true, text: 'Time' } },
-                    y: { title: { display: true, text: 'Anomaly Score' }, min: 0, max: 1 }
+                animation: {
+                    duration: 1000 // 1초 동안 애니메이션
                 }
             }
         });
-
-        const socket = io();
-        socket.on('update_data', (data) => {
-            // Update Read/Write Counts
-            readWriteChart.data.datasets[0].data[0] = data.read_count;
-            readWriteChart.data.datasets[0].data[1] = data.write_count;
-            readWriteChart.update();
-
-            // Update Anomaly Chart
-            anomalyChart.data.labels.push(new Date(data.timestamp * 1000).toLocaleTimeString());
-            anomalyChart.data.datasets[0].data.push(data.anomaly_score);
-
-            if (anomalyChart.data.labels.length > 20) {
-                anomalyChart.data.labels.shift();
-                anomalyChart.data.datasets[0].data.shift();
+        
+        async function fetchData() {
+            try {
+                const response = await fetch('/data');
+                const data = await response.json();
+        
+                // 새로운 데이터를 차트에 추가
+                data.forEach(item => {
+                    const timestamp = item.Timestamp || 'N/A';
+                    const read_io = item.Read_IO || 0;
+                    const write_io = item.Write_IO || 0;
+        
+                    // I/O 차트 업데이트
+                    if (ioChart.data.labels.length > 500) {  // 최대 500개 데이터 유지
+                        ioChart.data.labels.shift();
+                        ioChart.data.datasets[0].data.shift();
+                        ioChart.data.datasets[1].data.shift();
+                    }
+                    ioChart.data.labels.push(timestamp);
+                    ioChart.data.datasets[0].data.push(read_io);
+                    ioChart.data.datasets[1].data.push(write_io);
+                });
+        
+                // 차트 갱신
+                ioChart.update();
+            } catch (error) {
+                console.error('Error fetching data:', error);
             }
-            anomalyChart.update();
-        });
+        }
+        
+        // 주기적으로 데이터 가져오기
+        setInterval(fetchData, 2000); // 2초마다 데이터 업데이트
     </script>
 </body>
 </html>
-
