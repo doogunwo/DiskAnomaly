@@ -8,6 +8,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 import joblib
 import pandas as pd
 import os
+from datetime import datetime
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "pipeline"))
 from pipeline import pipe
@@ -46,7 +47,7 @@ def infer(input_seq, model):
         real_or_fake = model.discriminator(input_seq)
         return reconstruction_error, real_or_fake.cpu().numpy()
 
-def process_data_stream(device_path, seq_len, model, scaler):
+def process_data_stream(device_path, seq_len, model, scaler,stop_event):
     """
     실시간 데이터 스트림을 처리하고 Flask 대시보드에 데이터를 업데이트합니다.
     """
@@ -54,6 +55,8 @@ def process_data_stream(device_path, seq_len, model, scaler):
     buffer = []
 
     for raw_data in pipe(device_path, stop_event):
+        if stop_event.is_set():  # 종료 신호 확인
+            break
         try:
             # 데이터 전처리
             preprocessed_data = preprocess(raw_data, scaler)
@@ -67,14 +70,14 @@ def process_data_stream(device_path, seq_len, model, scaler):
                 _, anomaly = infer(input_seq, model)
                 
                 # Read I/O와 Write I/O 계산 (MB 단위)
-                read_io = raw_data["Size"] / (1024 * 1024) if raw_data["IO_Type"] == "R" else 0
-                write_io = raw_data["Size"] / (1024 * 1024) if raw_data["IO_Type"] == "W" else 0
-
+                timestamp = datetime.fromtimestamp(raw_data["Timestamp"]).strftime("%H:%M:%S")
+                
                 latest_data = {
-                    "Timestamp": raw_data["Timestamp"],
-                    "Read_IO": read_io,
-                    "Write_IO": write_io,
-                    "Anomaly": float(anomaly)
+                    "Timestamp": timestamp,  # HH:MM:SS 형식
+                    "IO_Type": raw_data["IO_Type"],  # I/O 작업 유형
+                    "Sector": raw_data["Sector"],  # 섹터 정보
+                    "Size": raw_data["Size"],  # 요청 크기
+                    "Anomaly": float(anomaly)  # 이상치 점수
                 }
 
                 if not data_queue.full():
