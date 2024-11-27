@@ -19,6 +19,21 @@ from pipeline import pipe
 sys.path.append(os.path.join(os.path.dirname(__file__), "model"))
 from model import AADModel
 
+def normalize_scores(scores, min_val=0.5, max_val=0.55):
+    """
+    이상치 점수를 0~1 범위로 정규화합니다.
+    """
+    normalized = []
+    for score in scores:
+        if score < min_val:
+            normalized.append(0)  # 최소값보다 작은 경우 0
+        elif score > max_val:
+            normalized.append(1)  # 최대값보다 큰 경우 1
+        else:
+            # 정규화 공식
+            normalized.append((score - min_val) / (max_val - min_val))
+    return normalized
+
 def generate_graphs(data_list):
     """
     종료 시 데이터를 기반으로 3개의 그래프를 생성합니다.
@@ -33,11 +48,13 @@ def generate_graphs(data_list):
     io_types = [d["IO_Type"] for d in data_list]
     sizes = [d["Size"] for d in data_list]
 
+    normalized_anomalies = normalize_scores(anomalies)
+
     plt.figure(figsize=(18, 10))
 
     # 1. 이상치 선형 그래프
     plt.subplot(3, 1, 1)
-    plt.plot(sequences, anomalies, label="Anomaly Score", color="red", alpha=0.7)
+    plt.plot(sequences, normalized_anomalies, label="Anomaly Score", color="red", alpha=0.7)
     plt.title("Anomaly Score Over Sequence")
     plt.xlabel("Sequence")
     plt.ylabel("Anomaly Score")
@@ -59,7 +76,7 @@ def generate_graphs(data_list):
     plt.ylabel("Count")
 
     plt.tight_layout()
-    plt.savefig("result.png")
+    plt.savefig("result3.png")
 
 def process_and_save_data(stop_event):
     """
